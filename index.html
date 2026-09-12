@@ -135,40 +135,101 @@ button,input,textarea,select{font:inherit}button{cursor:pointer}.app{max-width:5
 <div id="modal" class="modal" onclick="if(event.target.id==='modal')closeModal()"><div class="sheet"><button class="close" onclick="closeModal()">×</button><div id="modalContent"></div></div></div>
 
 <script>
-const views=[...document.querySelectorAll('.view')];
-const navMap={home:'navHome',comunidade:'navCommunity',aprender:'navLearn',config:'navMore',mais:'navMore'};
-function go(id){views.forEach(v=>v.classList.toggle('active',v.id===id));Object.values(navMap).forEach(x=>document.getElementById(x)?.classList.remove('active'));let n=navMap[id]||navMap[id==='vida'||id==='lembretes'?'home':id==='voz'||id==='protecao'||id==='confianca'?'home':'home'];document.getElementById(n)?.classList.add('active');window.scrollTo(0,0);if(id==='lembretes')renderReminders();if(id==='comunidade')communityTab('amigos');if(id==='confianca')renderContacts();updateCount()}
-function speak(t){if('speechSynthesis'in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='pt-BR';u.rate=.92;speechSynthesis.speak(u)}}
-function modal(title,body){document.getElementById('modalContent').innerHTML='<h2>'+title+'</h2>'+body;document.getElementById('modal').classList.add('show')}
-function closeModal(){document.getElementById('modal').classList.remove('show')}
-function detail(title,body){modal(title,body+'<button class="full save" style="margin-top:12px" onclick="closeModal()">✓ Entendi</button>')}
-function book(title,author,desc){modal('📚 '+title,'<div class="cover greenbg" style="font-size:72px">📖</div><p><strong>Autor:</strong> '+author+'</p><p>'+desc+'</p><h3>Exemplo de ação</h3><p class="muted">Você pode salvar o livro, marcar como “quero ler” ou abrir o clube de leitura.</p><button class="full save" onclick="alert(\'Livro salvo na sua lista!\');closeModal()">🔖 Quero ler</button><button class="full soft" onclick="closeModal();go(\'comunidade\')">👥 Ir para a comunidade</button>')}
-function editProfile(){modal('✏️ Editar perfil','<label>Nome<input id="pname" class="input" value="Maria Silva"></label><label>Idade<input id="page" class="input" value="56"></label><button class="full save" onclick="saveProfile()">Salvar</button>')}
-function saveProfile(){localStorage.setItem('vf_name',document.getElementById('pname').value);closeModal();alert('Perfil salvo neste aparelho.')}
-function reminders(){return JSON.parse(localStorage.getItem('vf_reminders')||'[]')}
-function addReminder(){let t=document.getElementById('rtitle').value.trim(),d=document.getElementById('rdate').value;if(!t)return alert('Digite o nome do lembrete.');let a=reminders();a.push({t,d});localStorage.setItem('vf_reminders',JSON.stringify(a));document.getElementById('rtitle').value='';document.getElementById('rdate').value='';renderReminders();updateCount()}
-function renderReminders(){let el=document.getElementById('reminders');if(!el)return;let a=reminders();el.innerHTML=a.length?'':'<div class="notice">Você ainda não tem lembretes. Adicione o primeiro abaixo.</div>';a.forEach((r,i)=>{let d=document.createElement('div');d.className='card';d.innerHTML='<div class="item"><div class="avatar">🔔</div><div class="grow"><strong>'+esc(r.t)+'</strong><small>'+((r.d&&new Date(r.d).toLocaleString('pt-BR'))||'Sem data')+'</small></div><button class="circle-btn" onclick="deleteReminder('+i+')">✓</button></div>';el.appendChild(d)})}
-function deleteReminder(i){let a=reminders();a.splice(i,1);localStorage.setItem('vf_reminders',JSON.stringify(a));renderReminders();updateCount()}
-function updateCount(){let x=document.getElementById('remCount');if(x)x.textContent=reminders().length}
+const views = [...document.querySelectorAll('.view')];
+const navMap = {home:'navHome', comunidade:'navCommunity', aprender:'navLearn', mais:'navMore', config:'navMore'};
+
+function go(id){
+  const target=document.getElementById(id);
+  if(!target){ alert('Esta área ainda não está disponível.'); return; }
+  views.forEach(v=>v.classList.toggle('active',v.id===id));
+  Object.values(navMap).forEach(x=>document.getElementById(x)?.classList.remove('active'));
+  const nav=navMap[id] || navMap.home;
+  document.getElementById(nav)?.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='lembretes') renderReminders();
+  if(id==='comunidade') communityTab('amigos');
+  if(id==='confianca') renderContacts();
+}
+function speak(t){
+  if('speechSynthesis' in window){
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(t); u.lang='pt-BR'; u.rate=.92; speechSynthesis.speak(u);
+  }
+}
+function modal(title,body){
+  document.getElementById('modalContent').innerHTML='<h2>'+title+'</h2>'+body;
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+function detail(title,body){modal(title,body+'<button class="full save" style="margin-top:12px" onclick="closeModal()">✓ Entendi</button>');}
+
+function editProfile(){
+  modal('✏️ Editar perfil','<label>Nome<input id="pname" class="input" value="Maria Silva"></label><label>Idade<input id="page" class="input" value="56"></label><button class="full save" onclick="saveProfile()">Salvar</button>');
+}
+function saveProfile(){localStorage.setItem('vf_name',document.getElementById('pname').value);closeModal();alert('Perfil salvo neste aparelho.');}
+
+function reminders(){return JSON.parse(localStorage.getItem('vf_reminders')||'[]');}
+function addReminder(){
+  const t=document.getElementById('rtitle').value.trim(), d=document.getElementById('rdate').value;
+  if(!t){alert('Digite o nome do lembrete.');return;}
+  const a=reminders(); a.push({t,d}); localStorage.setItem('vf_reminders',JSON.stringify(a));
+  document.getElementById('rtitle').value=''; document.getElementById('rdate').value=''; renderReminders();
+}
+function renderReminders(){
+  const el=document.getElementById('reminders'); if(!el)return;
+  const a=reminders();
+  el.innerHTML=a.length?'':'<div class="notice">Você ainda não tem lembretes. Adicione um exemplo ou crie o seu abaixo.</div>';
+  a.forEach((r,i)=>{
+    const d=document.createElement('div'); d.className='card';
+    d.innerHTML='<div class="item"><div class="avatar">🔔</div><div class="grow"><strong>'+esc(r.t)+'</strong><small>'+((r.d&&new Date(r.d).toLocaleString('pt-BR'))||'Sem data')+'</small></div><button class="circle-btn" onclick="deleteReminder('+i+')">✓</button></div>';
+    el.appendChild(d);
+  });
+}
+function deleteReminder(i){const a=reminders();a.splice(i,1);localStorage.setItem('vf_reminders',JSON.stringify(a));renderReminders();}
+function addExampleReminder(t){
+  const a=reminders(); a.push({t:t,d:''}); localStorage.setItem('vf_reminders',JSON.stringify(a)); renderReminders(); alert('Exemplo adicionado aos seus lembretes!');
+}
+
 const friends=[['Ana Paula','👩🏻','Amiga'],['João Carlos','👨🏽','Amigo'],['Maria José','👩🏽','Irmã']];
-function communityTab(tab){let el=document.getElementById('communityArea');if(!el)return;if(tab==='amigos')el.innerHTML='<div class="card"><h3>👥 Meus amigos</h3>'+friends.map((f,i)=>'<div class="item"><div class="avatar">'+f[1]+'</div><div class="grow"><strong>'+f[0]+'</strong><small>'+f[2]+' • Serra Talhada</small></div><button class="circle-btn" onclick="friend('+i+')">›</button></div>').join('')+'</div><div class="section-title"><h2>Conheça mais pessoas</h2></div><div class="card"><p class="muted">Encontre pessoas com interesses parecidos e participe dos grupos.</p><button class="full soft" onclick="alert(\'Busca de novas amizades aberta!\')">🔎 Encontrar amigos</button></div>';else if(tab==='atividades')el.innerHTML='<div class="list">'+[['🚶','Caminhada no parque','Toda terça • 7h'],['🧶','Oficina de crochê','Quinta • 15h'],['🎨','Pintura','Sábado • 14h'],['🎵','Música','Sexta • 18h'],['🌱','Horta comunitária','Sábado • 8h']].map(x=>'<div class="card"><div class="item"><div class="avatar">'+x[0]+'</div><div class="grow"><strong>'+x[1]+'</strong><small>'+x[2]+'</small></div><button class="circle-btn" onclick="alert(\'Atividade adicionada aos seus interesses!\')">＋</button></div></div>').join('');else if(tab==='eventos')el.innerHTML='<div class="list">'+[['📅','Encontro da Comunidade 50+','20/04/2025 • 15h','Centro Comunitário'],['🧶','Feira de Artesanato','27/04/2025 • 9h','Praça Central'],['🚌','Passeio Cultural','03/05/2025 • 7h','Saída da praça']].map(x=>'<div class="card"><div class="item"><div class="avatar">'+x[0]+'</div><div class="grow"><strong>'+x[1]+'</strong><small>'+x[2]+'<br>'+x[3]+'</small></div><button class="circle-btn" onclick="alert(\'Evento salvo na sua agenda!\')">＋</button></div></div>').join('');else el.innerHTML='<div class="list"><div class="card"><div class="cover">🧶</div><h3>Artesanato e Crochê</h3><p class="muted">Troque ideias e mostre seus trabalhos.</p><button class="full soft" onclick="go(\'artesanato\')">Entrar no grupo</button></div><div class="card"><div class="cover orange">🍳</div><h3>Receitas e Culinária</h3><button class="full soft" onclick="go(\'receitas\')">Entrar no grupo</button></div><div class="card"><div class="cover bluebg">✈️</div><h3>Viagens e Passeios</h3><button class="full soft" onclick="go(\'viagens\')">Entrar no grupo</button></div><div class="card"><div class="cover greenbg">📚</div><h3>Livros</h3><button class="full soft" onclick="go(\'livros\')">Entrar no grupo</button></div></div>')}
-function friend(i){modal(friends[i][0],'<div class="center"><div class="big-icon">'+friends[i][1]+'</div><p class="muted">'+friends[i][2]+' • Serra Talhada - PE</p><p><strong>Interesses de exemplo:</strong> caminhada, artesanato e música.</p><button class="full save" onclick="alert(\'Mensagem enviada!\');closeModal()">💬 Enviar mensagem</button><button class="full soft" onclick="alert(\'Perfil completo: foto, interesses e atividades favoritas.\')">👤 Ver perfil completo</button></div>')}
-function filterCommunity(v){document.querySelectorAll('#communityArea .item').forEach(x=>x.style.display=x.innerText.toLowerCase().includes(v.toLowerCase())?'flex':'none')}
-function recipe(t,ico,d){modal(ico+' '+t,'<div class="cover orange" style="font-size:80px">'+ico+'</div><p>'+d+'</p><h3>Exemplo de ingredientes</h3><p class="muted">2 ovos • 1 xícara de leite • 2 xícaras de farinha • açúcar a gosto • ingrediente principal.</p><h3>Como fazer</h3><p>1. Separe os ingredientes. 2. Misture conforme a receita. 3. Cozinhe ou asse até ficar pronto. 4. Sirva com carinho. 💜</p><button class="full save" onclick="alert(\'Receita salva!\');closeModal()">🔖 Salvar receita</button>')
-function tutorial(t,d){modal('🎓 '+t,'<div class="notice">'+d+'</div><button class="full save" style="margin-top:12px" onclick="speak('+JSON.stringify(d)+')">🔊 Ouvir tutorial</button>')}
-function like(b){let n=parseInt(b.innerText.replace(/\D/g,''))||0;b.innerText='♥ '+(n+1)}
-function savePost(){alert('Publicação salva nos seus favoritos!')}
-function publishCraft(){let t=document.getElementById('craftText').value.trim();if(!t)return alert('Escreva sobre seu artesanato.');alert('Publicação criada com sucesso!');document.getElementById('craftText').value=''}
-function contacts(){return JSON.parse(localStorage.getItem('vf_contacts')||JSON.stringify([['Ana Paula','Filha','(87) 9 9999-1111','👩🏻'],['João Carlos','Marido','(89) 8 8888-2222','👨🏽'],['Maria José','Irmã','(87) 9 7777-3333','👩🏽']]))}
-function renderContacts(){let el=document.getElementById('contacts');el.innerHTML=contacts().map((c,i)=>'<div class="card"><div class="item"><div class="avatar">'+c[3]+'</div><div class="grow"><strong>'+esc(c[0])+'</strong><small>'+esc(c[1])+' • '+esc(c[2])+'</small></div><a class="circle-btn" href="tel:'+c[2].replace(/\D/g,'')+'">☎</a><button class="circle-btn" onclick="deleteContact('+i+')">🗑</button></div></div>').join('')}
-function addContact(){let n=prompt('Nome do contato:');if(!n)return;let r=prompt('Relação (ex.: filha, filho, amiga):')||'Contato';let p=prompt('Telefone:')||'';let a=contacts();a.push([n,r,p,'👤']);localStorage.setItem('vf_contacts',JSON.stringify(a));renderContacts()}
-function deleteContact(i){let a=contacts();a.splice(i,1);localStorage.setItem('vf_contacts',JSON.stringify(a));renderContacts()}
-function voiceInput(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert('Seu navegador não oferece reconhecimento de voz. Use os comandos de exemplo abaixo.');return}let r=new SR();r.lang='pt-BR';r.onresult=e=>voiceCommand(e.results[0][0].transcript);r.start()}
-function voiceCommand(q){let s=q.toLowerCase();document.getElementById('voiceStatus').textContent='Você disse: “'+q+'”';if(s.includes('lembrete'))go('lembretes');else if(s.includes('video')||s.includes('whatsapp'))tutorial('Videochamada','Abra o WhatsApp, escolha um contato e toque no ícone de câmera.');else if(s.includes('golpe')||s.includes('segurança'))go('protecao');else if(s.includes('socorro')||s.includes('ajuda'))go('protecao');else if(s.includes('artesanato')||s.includes('crochê'))go('artesanato');else if(s.includes('receita'))go('receitas');else if(s.includes('viagem')||s.includes('passeio'))go('viagens');else if(s.includes('livro')||s.includes('leitura'))go('livros');else if(s.includes('amigo')||s.includes('comunidade'))go('comunidade');else if(s.includes('config'))go('config');else speak('Ainda estou aprendendo esse comando. Você pode escolher uma das opções da tela.')}
-function clearData(){if(confirm('Apagar lembretes e publicações deste aparelho?')){localStorage.removeItem('vf_reminders');localStorage.removeItem('vf_contacts');alert('Dados locais apagados. Os contatos padrão voltarão a aparecer.');go('home')}}
-function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
-updateCount();
+function communityTab(tab){
+  const el=document.getElementById('communityArea'); if(!el)return;
+  if(tab==='amigos'){
+    el.innerHTML='<div class="card"><h3>👥 Meus amigos</h3>'+friends.map((f,i)=>'<div class="item"><div class="avatar">'+f[1]+'</div><div class="grow"><strong>'+f[0]+'</strong><small>'+f[2]+' • Serra Talhada</small></div><button class="circle-btn" onclick="friend('+i+')">›</button></div>').join('')+'</div><div class="card"><h3>➕ Encontrar novos amigos</h3><p class="muted">Pessoas que gostam de caminhada, artesanato, música e culinária.</p><button class="full soft" onclick="alert(\'Busca de novas amizades aberta!\')">🔎 Encontrar amigos</button></div>';
+  } else if(tab==='atividades'){
+    const a=[['🚶','Caminhada no parque','Toda terça • 7h','Encontro na praça'],['🧶','Oficina de crochê','Quinta • 15h','Sala de artesanato'],['🎨','Pintura','Sábado • 14h','Centro comunitário'],['🎵','Música','Sexta • 18h','Salão principal'],['🌱','Horta comunitária','Sábado • 8h','Horta do bairro']];
+    el.innerHTML=a.map(x=>'<div class="card clickable" onclick="detail(\''+x[1]+'\',\'<p><strong>Horário:</strong> '+x[2]+'</p><p><strong>Local:</strong> '+x[3]+'</p><p>Exemplo: participe, conheça pessoas e marque esta atividade como favorita.</p><button class=\\"full success\\" onclick=\\"alert(\\\'Você entrou na atividade!\\\');closeModal()\\\">✓ Participar</button>\')"><div class="item"><div class="avatar">'+x[0]+'</div><div class="grow"><strong>'+x[1]+'</strong><small>'+x[2]+'<br>'+x[3]+'</small></div><button class="circle-btn" onclick="event.stopPropagation();alert(\'Atividade adicionada aos seus interesses!\')">＋</button></div></div>').join('');
+  } else if(tab==='eventos'){
+    const a=[['📅','Encontro da Comunidade 50+','20/09/2026 • 15h','Centro Comunitário'],['🧶','Feira de Artesanato','27/09/2026 • 9h','Praça Central'],['🚌','Passeio Cultural','03/10/2026 • 7h','Saída da praça']];
+    el.innerHTML=a.map(x=>'<div class="card clickable" onclick="detail(\''+x[1]+'\',\'<p><strong>Data:</strong> '+x[2]+'</p><p><strong>Local:</strong> '+x[3]+'</p><p>Exemplo: veja os detalhes, confirme presença e salve na agenda.</p>\')"><div class="item"><div class="avatar">'+x[0]+'</div><div class="grow"><strong>'+x[1]+'</strong><small>'+x[2]+'<br>'+x[3]+'</small></div><button class="circle-btn" onclick="event.stopPropagation();alert(\'Evento salvo na sua agenda!\')">＋</button></div></div>').join('');
+  } else {
+    el.innerHTML='<div class="card clickable" onclick="go(\'artesanato\')"><div class="cover">🧶</div><h3>Artesanato e Crochê</h3><p class="muted">Troque ideias e mostre seus trabalhos.</p><button class="full soft" onclick="event.stopPropagation();go(\'artesanato\')">Entrar no grupo ›</button></div><div class="card clickable" onclick="go(\'receitas\')"><div class="cover orange">🍳</div><h3>Receitas e Culinária</h3><button class="full soft" onclick="event.stopPropagation();go(\'receitas\')">Entrar no grupo ›</button></div><div class="card clickable" onclick="go(\'viagens\')"><div class="cover bluebg">✈️</div><h3>Viagens e Passeios</h3><button class="full soft" onclick="event.stopPropagation();go(\'viagens\')">Entrar no grupo ›</button></div><div class="card clickable" onclick="go(\'livros\')"><div class="cover greenbg">📚</div><h3>Livros</h3><button class="full soft" onclick="event.stopPropagation();go(\'livros\')">Entrar no grupo ›</button></div>';
+  }
+}
+function friend(i){
+  const f=friends[i]; modal(f[1]+' '+f[0],'<div class="center"><div class="big-icon">'+f[1]+'</div><p class="muted">'+f[2]+' • Serra Talhada - PE</p><p><strong>Interesses:</strong> caminhada, artesanato e música.</p><button class="full save" onclick="alert(\'Mensagem enviada!\');closeModal()">💬 Enviar mensagem</button><button class="full soft" onclick="detail(\'Perfil de '+f[0]+'\',\'<p>Exemplo de perfil: gosta de participar de atividades, eventos e grupos da comunidade.</p>\')">👤 Ver perfil completo</button></div>');
+}
+
+function recipe(t,ico,d){modal(ico+' '+t,'<div class="cover orange" style="font-size:80px">'+ico+'</div><p>'+d+'</p><h3>Exemplo de ingredientes</h3><p class="muted">2 ovos • 1 xícara de leite • 2 xícaras de farinha • açúcar a gosto • ingrediente principal.</p><h3>Como fazer</h3><p>1. Separe os ingredientes. 2. Misture. 3. Cozinhe ou asse. 4. Sirva com carinho. 💜</p><button class="full save" onclick="alert(\'Receita salva!\');closeModal()">🔖 Salvar receita</button>');}
+function tutorial(t,d){modal('🎓 '+t,'<div class="notice">'+d+'</div><button class="full save" style="margin-top:12px" onclick="speak('+JSON.stringify(d)+')">🔊 Ouvir tutorial</button>');}
+function book(t,a,d){modal('📚 '+t,'<div class="cover greenbg" style="font-size:72px">📖</div><p><strong>Autor:</strong> '+a+'</p><p>'+d+'</p><button class="full save" onclick="alert(\'Livro salvo na sua lista!\');closeModal()">🔖 Quero ler</button><button class="full soft" onclick="closeModal();go(\'comunidade\')">👥 Ir para a comunidade</button>');}
+function like(b){const n=parseInt(b.dataset.n||'0')+1;b.dataset.n=n;b.innerText='♥ '+n;}
+function savePost(){alert('Publicação salva nos seus favoritos!');}
+function publishCraft(){const t=document.getElementById('craftText').value.trim();if(!t){alert('Escreva sobre seu artesanato.');return;}alert('Publicação criada com sucesso!');document.getElementById('craftText').value='';}
+
+function contacts(){return JSON.parse(localStorage.getItem('vf_contacts')||JSON.stringify([['Ana Paula','Filha','(87) 9 9999-1111','👩🏻'],['João Carlos','Marido','(89) 8 8888-2222','👨🏽'],['Maria José','Irmã','(87) 9 7777-3333','👩🏽']]));}
+function renderContacts(){const el=document.getElementById('contacts');if(!el)return;el.innerHTML=contacts().map((c,i)=>'<div class="card"><div class="item"><div class="avatar">'+c[3]+'</div><div class="grow"><strong>'+esc(c[0])+'</strong><small>'+esc(c[1])+' • '+esc(c[2])+'</small></div><a class="circle-btn" href="tel:'+c[2].replace(/\D/g,'')+'">☎</a><button class="circle-btn" onclick="deleteContact('+i+')">🗑</button></div></div>').join('');}
+function addContact(){const n=prompt('Nome do contato:');if(!n)return;const r=prompt('Relação (ex.: filha, filho, amiga):')||'Contato';const p=prompt('Telefone:')||'';const a=contacts();a.push([n,r,p,'👤']);localStorage.setItem('vf_contacts',JSON.stringify(a));renderContacts();}
+function deleteContact(i){const a=contacts();a.splice(i,1);localStorage.setItem('vf_contacts',JSON.stringify(a));renderContacts();}
+
+function voiceInput(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert('Seu navegador não oferece reconhecimento de voz. Use os comandos de exemplo abaixo.');return;}const r=new SR();r.lang='pt-BR';r.onresult=e=>voiceCommand(e.results[0][0].transcript);r.start();}
+function voiceCommand(q){const s=q.toLowerCase();const st=document.getElementById('voiceStatus');if(st)st.textContent='Você disse: “'+q+'”';if(s.includes('lembrete'))go('lembretes');else if(s.includes('whatsapp')||s.includes('vídeo')||s.includes('video'))tutorial('WhatsApp','Abra o WhatsApp, escolha um contato e toque no ícone de câmera.');else if(s.includes('golpe')||s.includes('segurança')||s.includes('socorro')||s.includes('ajuda'))go('protecao');else if(s.includes('artesanato')||s.includes('crochê'))go('artesanato');else if(s.includes('receita'))go('receitas');else if(s.includes('viagem')||s.includes('passeio'))go('viagens');else if(s.includes('livro')||s.includes('leitura'))go('livros');else if(s.includes('amigo')||s.includes('comunidade'))go('comunidade');else if(s.includes('config'))go('config');else speak('Ainda estou aprendendo esse comando. Escolha uma opção na tela.');}
+function clearData(){if(confirm('Apagar dados locais?')){localStorage.clear();alert('Dados locais apagados.');go('home');}}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+
+// Garante que os exemplos das abas funcionem mesmo sem recarregar a página.
+if(document.getElementById('communityArea')) communityTab('amigos');
+if(document.getElementById('reminders')) renderReminders();
+if(document.getElementById('contacts')) renderContacts();
 </script>
 </body>
 </html>
